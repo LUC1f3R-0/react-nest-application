@@ -6,6 +6,7 @@ import { SmtpModule } from './infastructure/smtp/smtp.module';
 import { DatabaseModule } from './infastructure/database/database.module';
 import { CorsConfig } from './common/cors/cors.config';
 import { CommonModule } from './common/common.module';
+import { HealthModule } from './health/indicators/health.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     SmtpModule,
     DatabaseModule,
+    HealthModule,
   ],
   providers: [CorsConfig],
 })
