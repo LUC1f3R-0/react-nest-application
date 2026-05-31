@@ -5,6 +5,7 @@ import validationSchema from './config/validation.config';
 import { SmtpModule } from './infastructure/smtp/smtp.module';
 import { DatabaseModule } from './infastructure/database/database.module';
 import { CorsConfig } from './common/cors/cors.config';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CorsConfig } from './common/cors/cors.config';
       load: [appConfig, smtpConfig, dataConfig],
       validationSchema: validationSchema,
     }),
+    CommonModule,
     SmtpModule,
     DatabaseModule,
   ],
