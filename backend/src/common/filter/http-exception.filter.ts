@@ -1,33 +1,48 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
 } from '@nestjs/common';
+import { GqlExceptionFilter } from '@nestjs/graphql';
 import { Request, Response } from 'express';
 
 @Catch(HttpException)
-class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+class HttpExceptionFilter implements ExceptionFilter, GqlExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    // GraphQL must not use response.status().json().
+    // Let Nest/Apollo convert the HttpException into a GraphQL error.
+    if (host.getType<string>() === 'graphql') {
+      return exception;
+    }
+
+    const context = host.switchToHttp();
+    const response = context.getResponse<Response>();
+    const request = context.getRequest<Request>();
 
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
     const message =
-      typeof exceptionResponse === 'object' && 'message' in exceptionResponse
-        ? (exceptionResponse as Record<string, unknown>).message
-        : exceptionResponse;
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      'message' in exceptionResponse
+        ? (exceptionResponse as { message: string | string[] }).message
+        : exception.message;
+
+    const requestId =
+      typeof request.headers['x-request-id'] === 'string'
+        ? request.headers['x-request-id']
+        : null;
 
     response.status(status).json({
       success: false,
       statusCode: status,
       message,
-      requestId: request.headers['x-request-id'] ?? null,
+      path: request.originalUrl,
+      method: request.method,
+      requestId,
       timestamp: new Date().toISOString(),
-      path: request.url,
     });
   }
 }

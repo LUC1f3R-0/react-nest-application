@@ -7,6 +7,9 @@ import { DatabaseModule } from './infastructure/database/database.module';
 import { CorsConfig } from './common/cors/cors.config';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/indicators/health.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -15,9 +18,17 @@ import { HealthModule } from './health/indicators/health.module';
       load: [appConfig, smtpConfig, dataConfig],
       validationSchema: validationSchema,
     }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: true,
+      sortSchema: true,
+      path: 'graphql',
+      useGlobalPrefix: true,
+    }),
     CommonModule,
     SmtpModule,
     DatabaseModule,
+    AuthModule,
     HealthModule,
   ],
   providers: [CorsConfig],

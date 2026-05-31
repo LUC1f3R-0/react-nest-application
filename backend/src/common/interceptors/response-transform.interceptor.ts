@@ -23,13 +23,25 @@ export interface ApiResponse<T> {
 @Injectable()
 class ResponseTransformInterceptor<T> implements NestInterceptor<
   T | ControllerResponse<T>,
-  ApiResponse<T>
+  ApiResponse<T> | T
 > {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T | ControllerResponse<T>>,
-  ): Observable<ApiResponse<T>> {
+  ): Observable<ApiResponse<T> | T> {
+    // This response wrapper is for REST only.
+    // GraphQL must keep its own response shape: { data: { ... } }
+    if (context.getType<string>() === 'graphql') {
+      return next.handle() as Observable<T>;
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
+
+    // Safety check, so non-HTTP contexts do not crash.
+    if (!request) {
+      return next.handle() as Observable<T>;
+    }
+
     const requestId = (request.headers['x-request-id'] as string) ?? null;
 
     return next.handle().pipe(

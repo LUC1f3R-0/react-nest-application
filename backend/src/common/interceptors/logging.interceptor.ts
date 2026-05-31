@@ -13,7 +13,18 @@ class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggingInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // This interceptor is written for REST requests.
+    // GraphQL resolvers do not use the same HTTP context shape.
+    if (context.getType<string>() === 'graphql') {
+      return next.handle();
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
+
+    // Safety check, so the app will not crash if request is undefined.
+    if (!request) {
+      return next.handle();
+    }
 
     const method = request.method;
     const url = request.originalUrl;

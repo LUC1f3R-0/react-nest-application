@@ -16,6 +16,12 @@ class HeadersValidationGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // GraphQL requests should skip this REST header validation guard.
+    // This guard was written for REST controllers, not GraphQL resolvers.
+    if (context.getType<string>() === 'graphql') {
+      return true;
+    }
+
     const skipValidation = this.reflector.getAllAndOverride<boolean>(
       SKIP_HEADER_VALIDATION,
       [context.getHandler(), context.getClass()],
@@ -26,6 +32,11 @@ class HeadersValidationGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
+
+    // Extra safety: if request is not available, do not crash the app.
+    if (!request) {
+      return true;
+    }
 
     if (request.method.toUpperCase() === 'OPTIONS') {
       return true;
@@ -49,4 +60,5 @@ class HeadersValidationGuard implements CanActivate {
     return true;
   }
 }
+
 export { HeadersValidationGuard };
